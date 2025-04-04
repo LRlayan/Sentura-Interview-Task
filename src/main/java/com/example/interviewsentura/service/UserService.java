@@ -53,13 +53,41 @@ public class UserService {
                 }
             }
         } catch (JsonProcessingException e) {
-            System.out.println("Error converting user to JSON");
+            System.out.println("Error");
             e.printStackTrace();
-            throw new RuntimeException("Error converting user to JSON", e);
+            throw new RuntimeException("Error", e);
         } catch (IOException e) {
-            System.out.println("Error making HTTP request to Weavy API");
+            System.out.println("Error");
             e.printStackTrace();
-            throw new RuntimeException("Error making HTTP request to Weavy API", e);
+            throw new RuntimeException("Error", e);
+        }
+    }
+
+    public UserDTO updateUser(String userId, UserDTO userDTO) {
+        String endpoint = weavyApiUrl + "/api/users/" + userId;
+
+        try {
+            String jsonBody = objectMapper.writeValueAsString(userDTO);
+            RequestBody body = RequestBody.create(jsonBody, MediaType.parse("application/json"));
+            Request request = new Request.Builder()
+                    .url(endpoint)
+                    .put(body)
+                    .addHeader("Authorization", "Bearer " + weavyApiToken)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String responseBody = response.body().string();
+                    return objectMapper.readValue(responseBody, UserDTO.class);
+                } else {
+                    throw new RuntimeException("Failed to update user: " + response.message());
+                }
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error ", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Error", e);
         }
     }
 }
